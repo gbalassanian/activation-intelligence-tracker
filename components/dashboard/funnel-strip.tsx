@@ -67,7 +67,7 @@ export function FunnelStrip({ stages, total }: { stages: FunnelStage[]; total: n
       <CardContent>
         <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
           {stages.map((stage, index) => (
-            <div key={stage.milestone} className="flex flex-1 items-stretch gap-2">
+            <div key={stage.milestone} className="flex min-w-0 flex-1 items-stretch gap-2">
               <Tooltip
                 className="min-w-0 flex-1"
                 content={<StageTooltip stage={stage} total={total} />}

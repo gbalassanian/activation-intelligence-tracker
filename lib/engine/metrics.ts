@@ -93,6 +93,9 @@ export function buildCohorts(healths: WorkspaceHealth[], limit = 10): CohortRow[
   const rows: CohortRow[] = weeks.map((week) => {
     const members = buckets.get(week) ?? [];
     const ttfvs = members.map((m) => m.ttfvHours).filter((v): v is number => v !== null);
+    const activationTimes = members
+      .map((m) => m.timeToActivationHours)
+      .filter((v): v is number => v !== null);
     const consumingTimes = members
       .map((m) => m.timeToConsumingHours)
       .filter((v): v is number => v !== null);
@@ -112,6 +115,7 @@ export function buildCohorts(healths: WorkspaceHealth[], limit = 10): CohortRow[
       workspaces: members.length,
       medianTtfvHours: median(ttfvs),
       p90TtfvHours: percentile(ttfvs, 0.9),
+      medianTimeToActivationHours: median(activationTimes),
       medianTimeToConsumingHours: median(consumingTimes),
       testedRate: safeRate(tested, members.length),
       activationRate: safeRate(activated, members.length),
@@ -136,6 +140,9 @@ export function buildExecutiveMetrics(
 ): ExecutiveMetrics {
   const total = healths.length;
   const ttfvs = healths.map((h) => h.ttfvHours).filter((v): v is number => v !== null);
+  const activationTimes = healths
+    .map((h) => h.timeToActivationHours)
+    .filter((v): v is number => v !== null);
 
   const activated = healths.filter(
     (h) => MILESTONE_RANK[h.milestone] >= MILESTONE_RANK.M3_ACTIVATED,
@@ -173,6 +180,7 @@ export function buildExecutiveMetrics(
     totalWorkspaces: total,
     medianTtfvHours: median(ttfvs),
     p90TtfvHours: percentile(ttfvs, 0.9),
+    medianTimeToActivationHours: median(activationTimes),
     fullActivationRate: safeRate(activated, total),
     consumingGraduationRate: safeRate(consuming, total),
     atRiskCount,

@@ -82,6 +82,7 @@ export function CohortMatrix({ cohorts }: { cohorts: CohortRow[] }) {
                 <TableHead>Tested</TableHead>
                 <TableHead>Activated</TableHead>
                 <TableHead>Consuming</TableHead>
+                <TableHead className="text-right">Time to M3</TableHead>
                 <TableHead className="text-right">Time to M4</TableHead>
                 <TableHead className="pr-5 text-right">At risk</TableHead>
               </TableRow>
@@ -118,6 +119,11 @@ export function CohortMatrix({ cohorts }: { cohorts: CohortRow[] }) {
                   </TableCell>
                   <TableCell className="align-middle">
                     <RateCell rate={row.consumingRate} accent />
+                  </TableCell>
+                  <TableCell className="text-right align-middle">
+                    <span data-metric className="font-mono text-[11px] text-zinc-500">
+                      {formatDuration(row.medianTimeToActivationHours)}
+                    </span>
                   </TableCell>
                   <TableCell className="text-right align-middle">
                     <span data-metric className="font-mono text-[11px] text-zinc-500">

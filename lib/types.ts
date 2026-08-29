@@ -340,6 +340,7 @@ export interface CohortRow {
   workspaces: number;
   medianTtfvHours: number | null;
   p90TtfvHours: number | null;
+  medianTimeToActivationHours: number | null;
   medianTimeToConsumingHours: number | null;
   testedRate: number;
   activationRate: number;
@@ -353,6 +354,13 @@ export interface ExecutiveMetrics {
   totalWorkspaces: number;
   medianTtfvHours: number | null;
   p90TtfvHours: number | null;
+  /**
+   * Median hours from M0 to the first agent reaching M3 Activated. Tracked
+   * beside TTFV because the two measure different things: TTFV is friction in
+   * the product itself, while time-to-production also carries the customer's
+   * own deploy timeline.
+   */
+  medianTimeToActivationHours: number | null;
   /** M0 -> M3 conversion. */
   fullActivationRate: number;
   /** M0 -> M4 conversion. */

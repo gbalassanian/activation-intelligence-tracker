@@ -1,4 +1,4 @@
-import { AlertTriangle, Gauge, Rocket, Timer, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Gauge, PlugZap, Rocket, Timer, TrendingUp } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +32,12 @@ export default function FunnelPage() {
       ? latest.medianTtfvHours - previous.medianTtfvHours
       : null;
 
+  // Distance between "it worked for them" (M2) and "it is live" (M3).
+  const productionGap =
+    metrics.medianTimeToActivationHours != null && metrics.medianTtfvHours != null
+      ? metrics.medianTimeToActivationHours - metrics.medianTtfvHours
+      : null;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -46,7 +52,7 @@ export default function FunnelPage() {
         }
       />
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <KpiCard
           label="Median TTFV"
           value={
@@ -87,6 +93,26 @@ export default function FunnelPage() {
                 ? `${(metrics.p90TtfvHours - metrics.medianTtfvHours).toFixed(1)}h`
                 : '—'}
             </span>
+          }
+        />
+        <KpiCard
+          label="Time to production"
+          value={
+            metrics.medianTimeToActivationHours === null
+              ? '—'
+              : (metrics.medianTimeToActivationHours / 24).toFixed(1)
+          }
+          unit={metrics.medianTimeToActivationHours === null ? undefined : 'd'}
+          caption="P50 signup → first agent live in production (M3)"
+          tone="neutral"
+          Icon={PlugZap}
+          tooltip="Median hours from workspace creation to the first agent reaching M3 Activated. Tracked separately from TTFV because the two measure different things: TTFV is friction inside the product — signup, agent config, the simulator — which ElevenLabs controls, while time-to-production also carries the customer's own deploy timeline (sprint planning, number provisioning, security review)."
+          footnote={
+            productionGap === null ? null : (
+              <span className="font-mono">
+                gap M2→M3 {formatDuration(productionGap)}
+              </span>
+            )
           }
         />
         <KpiCard
