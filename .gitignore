@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+build
+.DS_Store
+*.pem
+npm-debug.log*
+.env*.local
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Local SQLite database (regenerated + reseeded automatically on first run)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm

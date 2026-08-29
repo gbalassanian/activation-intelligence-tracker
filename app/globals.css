@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ElevenLabs surfaces: near-white canvas, pure-white containers. */
+    --canvas: #fbfbfb;
+    --surface: #ffffff;
+    --border: 228 228 231; /* zinc-200 */
+  }
+
+  * {
+    @apply border-zinc-200;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--canvas);
+    @apply text-zinc-900 antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Tabular figures everywhere telemetry is displayed. */
+  .font-mono,
+  [data-metric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    @apply bg-zinc-900 text-white;
+  }
+}
+
+@layer components {
+  /* Thin scrollbars that match the zinc palette. */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(212 212 216) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-zinc-300;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
