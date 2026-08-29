@@ -2,7 +2,7 @@
   "name": "elevenlabs-activation-tracker",
   "version": "1.0.0",
   "private": true,
-  "description": "ElevenLabs Adoption & Operations Control Center — 30-day activation funnel, TTFV telemetry, and proactive remediation.",
+  "description": "ElevenLabs Adoption & Operations Control Center \u2014 30-day activation funnel, TTFV telemetry, and proactive remediation.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,6 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
+    "export:snapshot": "tsx scripts/export-snapshot.ts",
     "db:reset": "node -e \"require('fs').rmSync('data/tracker.db',{force:true});console.log('database reset')\""
   },
   "dependencies": {

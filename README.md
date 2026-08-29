@@ -29,6 +29,7 @@ immediately.
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint (`next lint`) |
 | `npm run seed [count]` | Add a batch to the database from the CLI (default: the 120-workspace baseline) |
+| `npm run export:snapshot [file]` | Dump a full engine snapshot (metrics, funnel, cohorts, workspace health, intervention queue) to JSON |
 | `npm run db:reset` | Delete the local database; it reseeds on the next read |
 
 ---
@@ -173,3 +174,5 @@ fully offline, falling back to the system sans/mono stacks.
   baseline.
 - Synthetic generation is deterministic: `lib/sim/random.ts` is a seeded mulberry32 PRNG, so the
   baseline dataset is reproducible while ad-hoc scenarios seed from the clock.
+- `npm run export:snapshot` writes the derived engine output to a single JSON file without booting
+  the server — useful for inspecting what the rules produce, or for building a static preview.

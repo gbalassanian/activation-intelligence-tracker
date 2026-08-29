@@ -9,6 +9,10 @@ npm-debug.log*
 next-env.d.ts
 tsconfig.tsbuildinfo
 
+# Generated engine snapshots (npm run export:snapshot)
+engine-snapshot.json
+*.snapshot.json
+
 # Local SQLite database (regenerated + reseeded automatically on first run)
 data/*.db
 data/*.db-journal
