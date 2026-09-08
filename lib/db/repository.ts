@@ -18,6 +18,7 @@ import type {
   TelemetryEventInput,
   Tier,
   Workspace,
+  WorkspaceSource,
 } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -27,6 +28,7 @@ import type {
 interface WorkspaceRow {
   id: string;
   name: string;
+  source: string;
   tier: string;
   region: string;
   use_case: string;
@@ -86,6 +88,7 @@ function toWorkspace(row: WorkspaceRow): Workspace {
   return {
     id: row.id,
     name: row.name,
+    source: (row.source ?? 'synthetic') as WorkspaceSource,
     tier: row.tier as Tier,
     region: row.region as Region,
     useCase: row.use_case,
@@ -158,8 +161,8 @@ export function insertWorkspaces(workspaces: Workspace[]): void {
   const db = getDb();
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO workspaces
-      (id, name, tier, region, use_case, owner, created_at, cohort_week, credit_quota, seats)
-    VALUES (@id, @name, @tier, @region, @useCase, @owner, @createdAt, @cohortWeek, @creditQuota, @seats)
+      (id, name, source, tier, region, use_case, owner, created_at, cohort_week, credit_quota, seats)
+    VALUES (@id, @name, @source, @tier, @region, @useCase, @owner, @createdAt, @cohortWeek, @creditQuota, @seats)
   `);
   db.transaction((rows: Workspace[]) => {
     for (const row of rows) stmt.run(row);
@@ -298,12 +301,25 @@ export function listEvents(): TelemetryEvent[] {
   ).map(toEvent);
 }
 
-export function listRecentEvents(limit = 60): TelemetryEvent[] {
-  return (
-    getDb()
-      .prepare('SELECT * FROM telemetry_events ORDER BY timestamp DESC LIMIT ?')
-      .all(limit) as EventRow[]
-  ).map(toEvent);
+/**
+ * Most recent events, optionally restricted to one telemetry source. Scoping
+ * happens in SQL so the caller still gets a full page of rows.
+ */
+export function listRecentEvents(limit = 60, source?: WorkspaceSource): TelemetryEvent[] {
+  const db = getDb();
+  const rows = source
+    ? (db
+        .prepare(
+          `SELECT e.* FROM telemetry_events e
+             JOIN workspaces w ON w.id = e.workspace_id
+            WHERE w.source = ?
+            ORDER BY e.timestamp DESC LIMIT ?`,
+        )
+        .all(source, limit) as EventRow[])
+    : (db
+        .prepare('SELECT * FROM telemetry_events ORDER BY timestamp DESC LIMIT ?')
+        .all(limit) as EventRow[]);
+  return rows.map(toEvent);
 }
 
 export function listInterventions(limit = 100): InterventionRecord[] {

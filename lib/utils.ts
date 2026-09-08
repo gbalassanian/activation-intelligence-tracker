@@ -77,6 +77,11 @@ export function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US').format(value);
 }
 
+/** "1 workspace" / "2 workspaces". */
+export function plural(count: number, singular: string, pluralForm?: string): string {
+  return `${formatNumber(count)} ${count === 1 ? singular : pluralForm ?? `${singular}s`}`;
+}
+
 export function formatTimestamp(iso: string): string {
   const d = new Date(iso);
   return `${d.toISOString().slice(0, 10)} ${d.toISOString().slice(11, 19)}Z`;

@@ -395,6 +395,7 @@ function buildWorkspace(
   const workspace: Workspace = {
     id,
     name: `${rnd.pick(COMPANY_PREFIXES)} ${rnd.pick(COMPANY_SUFFIXES)}`,
+    source: 'synthetic',
     tier,
     region: rnd.weighted(REGION_WEIGHTS),
     useCase: rnd.pick(USE_CASES),

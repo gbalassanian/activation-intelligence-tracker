@@ -26,7 +26,13 @@ function detailFor(event: TelemetryEvent): string {
   return '';
 }
 
-export function EventStream({ events }: { events: TelemetryEvent[] }) {
+export function EventStream({
+  events,
+  scopeLabel,
+}: {
+  events: TelemetryEvent[];
+  scopeLabel?: string;
+}) {
   return (
     <Card className="flex h-full flex-col">
       <CardHeader>
@@ -38,7 +44,7 @@ export function EventStream({ events }: { events: TelemetryEvent[] }) {
           Live telemetry stream
         </CardTitle>
         <CardDescription>
-          Most recent immutable events ingested across all workspaces.
+          Most recent immutable events ingested across {scopeLabel ?? 'all workspaces'}.
         </CardDescription>
       </CardHeader>
       <CardContent className="scrollbar-thin max-h-[560px] overflow-y-auto px-0 pb-0">

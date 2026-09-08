@@ -14,6 +14,18 @@ type GlobalWithDb = typeof globalThis & {
 
 const globalRef = globalThis as GlobalWithDb;
 
+/**
+ * Additive column migrations. `CREATE TABLE IF NOT EXISTS` leaves an existing
+ * table untouched, so columns added after a database was first created have to
+ * be applied explicitly. Each step is idempotent.
+ */
+function migrate(db: Database.Database): void {
+  const columns = db.prepare('PRAGMA table_info(workspaces)').all() as Array<{ name: string }>;
+  if (!columns.some((column) => column.name === 'source')) {
+    db.exec("ALTER TABLE workspaces ADD COLUMN source TEXT NOT NULL DEFAULT 'synthetic'");
+  }
+}
+
 function createConnection(): Database.Database {
   if (DB_PATH !== ':memory:') {
     fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
@@ -22,6 +34,7 @@ function createConnection(): Database.Database {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(fs.readFileSync(SCHEMA_PATH, 'utf8'));
+  migrate(db);
   return db;
 }
 

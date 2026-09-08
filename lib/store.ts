@@ -17,14 +17,17 @@ import { evaluateWorkspace } from './engine/health';
 import { buildInterventionQueue, buildSuppressionSet } from './engine/interventions';
 import { buildCohorts, buildExecutiveMetrics, buildFunnel } from './engine/metrics';
 import { generateSeedDataset, type GeneratedDataset } from './sim/generator';
+import { SOURCE_SCOPES } from './types';
 import type {
   CohortRow,
   ExecutiveMetrics,
   FunnelStage,
   InterventionCandidate,
   InterventionRecord,
+  SourceScope,
   TelemetryEvent,
   WorkspaceHealth,
+  WorkspaceSource,
 } from './types';
 
 /**
@@ -78,20 +81,52 @@ export const getWorkspaceHealths = cache((): WorkspaceHealth[] => {
   );
 });
 
+/** Narrows an unknown query value to a valid scope, defaulting to 'all'. */
+export function parseScope(value: unknown): SourceScope {
+  return SOURCE_SCOPES.includes(value as SourceScope) ? (value as SourceScope) : 'all';
+}
+
+export function filterBySource(
+  healths: WorkspaceHealth[],
+  scope: SourceScope,
+): WorkspaceHealth[] {
+  if (scope === 'all') return healths;
+  return healths.filter((health) => health.workspace.source === scope);
+}
+
+/** How many workspaces each scope would show, for the selector's counts. */
+export function sourceCounts(healths: WorkspaceHealth[]): Record<SourceScope, number> {
+  const counts = { all: healths.length, synthetic: 0, elevenlabs: 0 };
+  for (const health of healths) {
+    const source: WorkspaceSource = health.workspace.source ?? 'synthetic';
+    counts[source] += 1;
+  }
+  return counts;
+}
+
 export interface DashboardState {
   healths: WorkspaceHealth[];
   metrics: ExecutiveMetrics;
   funnel: FunnelStage[];
   cohorts: CohortRow[];
+  scope: SourceScope;
+  counts: Record<SourceScope, number>;
 }
 
-export const getDashboardState = cache((): DashboardState => {
-  const healths = getWorkspaceHealths();
+/**
+ * Metrics are computed over the scoped subset only. Blending fabricated and
+ * real accounts into one median would make every headline number unreadable.
+ */
+export const getDashboardState = cache((scope: SourceScope = 'all'): DashboardState => {
+  const all = getWorkspaceHealths();
+  const healths = filterBySource(all, scope);
   return {
     healths,
     metrics: buildExecutiveMetrics(healths),
     funnel: buildFunnel(healths),
     cohorts: buildCohorts(healths),
+    scope,
+    counts: sourceCounts(all),
   };
 });
 
@@ -102,8 +137,8 @@ export interface InterventionState {
   totalTargets: number;
 }
 
-export const getInterventionState = cache((): InterventionState => {
-  const healths = getWorkspaceHealths();
+export const getInterventionState = cache((scope: SourceScope = 'all'): InterventionState => {
+  const healths = filterBySource(getWorkspaceHealths(), scope);
   const auditLog = listInterventions();
   const candidates = buildInterventionQueue(healths);
   const targets = new Set(candidates.flatMap((c) => c.workspaces.map((w) => w.workspace.id)));
@@ -115,7 +150,9 @@ export const getInterventionState = cache((): InterventionState => {
   };
 });
 
-export const getRecentEvents = cache((limit = 40): TelemetryEvent[] => {
-  ensureSeeded();
-  return listRecentEvents(limit);
-});
+export const getRecentEvents = cache(
+  (limit = 40, scope: SourceScope = 'all'): TelemetryEvent[] => {
+    ensureSeeded();
+    return listRecentEvents(limit, scope === 'all' ? undefined : scope);
+  },
+);

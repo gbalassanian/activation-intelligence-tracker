@@ -4,15 +4,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { WorkspaceTable } from '@/components/dashboard/workspace-table';
 import { EventStream } from '@/components/dashboard/event-stream';
-import { getRecentEvents, getWorkspaceHealths } from '@/lib/store';
+import { SourceFilter, EmptyScope } from '@/components/dashboard/source-filter';
+import {
+  filterBySource,
+  getRecentEvents,
+  getWorkspaceHealths,
+  parseScope,
+  sourceCounts,
+} from '@/lib/store';
 import { STALLED_RULES, RULE_THRESHOLDS } from '@/lib/engine/rules';
+import type { SourceScope } from '@/lib/types';
+
+const SCOPE_PHRASE: Record<SourceScope, string> = {
+  all: 'all workspaces',
+  synthetic: 'synthetic workspaces',
+  elevenlabs: 'connected ElevenLabs workspaces',
+};
 import { formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-export default function LiveFeedPage() {
-  const healths = getWorkspaceHealths();
-  const events = getRecentEvents(50);
+export default function LiveFeedPage({
+  searchParams,
+}: {
+  searchParams: { source?: string };
+}) {
+  const scope = parseScope(searchParams.source);
+  const all = getWorkspaceHealths();
+  const counts = sourceCounts(all);
+  const healths = filterBySource(all, scope);
+  const events = getRecentEvents(50, scope);
 
   const errorBlocked = healths.filter((h) => h.status === 'ERROR_BLOCKED').length;
   const stalled = healths.filter((h) => h.status === 'STALLED').length;
@@ -26,7 +47,9 @@ export default function LiveFeedPage() {
         title="Workspace operations"
         description="Every customer workspace with its agent roster, resolved milestone, and machine-generated root-cause diagnostic. Secondary agent failures never downgrade an otherwise healthy workspace — they surface as a sub-status badge instead."
         actions={
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <SourceFilter scope={scope} counts={counts} />
+            <div className="flex flex-wrap items-center gap-1.5">
             <Badge variant="rose" mono>
               <AlertTriangle className="h-3 w-3" /> {errorBlocked} error blocked
             </Badge>
@@ -36,9 +59,10 @@ export default function LiveFeedPage() {
             <Badge variant="amber" mono>
               <PackageX className="h-3 w-3" /> {shelfware} shelfware
             </Badge>
-            <Badge variant="neutral" mono>
-              <Radio className="h-3 w-3" /> {formatNumber(agentsStalled)} agents stalled
-            </Badge>
+              <Badge variant="neutral" mono>
+                <Radio className="h-3 w-3" /> {formatNumber(agentsStalled)} agents stalled
+              </Badge>
+            </div>
           </div>
         }
       />
@@ -48,7 +72,7 @@ export default function LiveFeedPage() {
           <WorkspaceTable healths={healths} />
         </div>
         <div className="flex flex-col gap-4 xl:sticky xl:top-6 xl:self-start">
-          <EventStream events={events} />
+          <EventStream events={events} scopeLabel={SCOPE_PHRASE[scope]} />
 
           <Card>
             <CardHeader>

@@ -6,10 +6,11 @@ import { KpiCard } from '@/components/dashboard/kpi-card';
 import { FunnelStrip } from '@/components/dashboard/funnel-strip';
 import { CohortMatrix } from '@/components/dashboard/cohort-matrix';
 import { TtfvChart } from '@/components/dashboard/ttfv-chart';
-import { getDashboardState } from '@/lib/store';
+import { SourceFilter, EmptyScope } from '@/components/dashboard/source-filter';
+import { getDashboardState, parseScope } from '@/lib/store';
 import { buildTtfvTrend } from '@/lib/engine/metrics';
 import { RISK_LABEL, RISK_STATUSES, type RiskStatus } from '@/lib/types';
-import { cn, formatDuration, formatNumber, formatPercent } from '@/lib/utils';
+import { cn, formatDuration, formatNumber, formatPercent, plural } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,8 +22,13 @@ const STATUS_BAR: Record<RiskStatus, string> = {
   CHURNED: 'bg-zinc-400',
 };
 
-export default function FunnelPage() {
-  const { metrics, funnel, cohorts } = getDashboardState();
+export default function FunnelPage({
+  searchParams,
+}: {
+  searchParams: { source?: string };
+}) {
+  const scope = parseScope(searchParams.source);
+  const { metrics, funnel, cohorts, counts } = getDashboardState(scope);
   const trend = buildTtfvTrend(cohorts);
   const latest = cohorts[cohorts.length - 1];
   const previous = cohorts[cohorts.length - 2];
@@ -45,12 +51,18 @@ export default function FunnelPage() {
         title="Activation funnel"
         description="Time-to-First-Value and 30-day funnel health across every ElevenLabs customer workspace. Workspace stage is resolved as the highest milestone achieved by any of its Conversational Agents."
         actions={
-          <Badge variant="outline" mono>
-            {formatNumber(metrics.totalWorkspaces)} workspaces · {formatNumber(metrics.totalAgents)}{' '}
-            agents
-          </Badge>
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <SourceFilter scope={scope} counts={counts} />
+            <Badge variant="outline" mono>
+              {plural(metrics.totalWorkspaces, 'workspace')} ·{' '}
+              {plural(metrics.totalAgents, 'agent')}
+            </Badge>
+          </div>
         }
       />
+
+      {metrics.totalWorkspaces === 0 ? <EmptyScope scope={scope} /> : (
+      <>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <KpiCard
@@ -273,6 +285,8 @@ export default function FunnelPage() {
           ))}
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   );
 }

@@ -68,9 +68,29 @@ export type Tier = (typeof TIERS)[number];
 export const REGIONS = ['NA', 'EMEA', 'APAC', 'LATAM'] as const;
 export type Region = (typeof REGIONS)[number];
 
+/**
+ * Where a workspace's telemetry came from. The engine treats both identically —
+ * this exists so aggregate metrics are never silently computed over a blend of
+ * fabricated and real accounts.
+ */
+export const WORKSPACE_SOURCES = ['synthetic', 'elevenlabs'] as const;
+export type WorkspaceSource = (typeof WORKSPACE_SOURCES)[number];
+
+/** Selector state for scoping every view. */
+export const SOURCE_SCOPES = ['all', 'synthetic', 'elevenlabs'] as const;
+export type SourceScope = (typeof SOURCE_SCOPES)[number];
+
+export const SOURCE_SCOPE_LABEL: Record<SourceScope, string> = {
+  all: 'All sources',
+  synthetic: 'Synthetic',
+  elevenlabs: 'Real workspaces',
+};
+
 export interface Workspace {
   id: string;
   name: string;
+  /** 'synthetic' for generated data, 'elevenlabs' for a connected account. */
+  source: WorkspaceSource;
   tier: Tier;
   region: Region;
   /** Primary use case declared at signup, e.g. "Customer Support Deflection". */

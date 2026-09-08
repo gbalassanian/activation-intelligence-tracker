@@ -8,6 +8,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS workspaces (
   id            TEXT PRIMARY KEY,
   name          TEXT NOT NULL,
+  source        TEXT NOT NULL DEFAULT 'synthetic',
   tier          TEXT NOT NULL,
   region        TEXT NOT NULL,
   use_case      TEXT NOT NULL,
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS workspaces (
 );
 
 CREATE INDEX IF NOT EXISTS idx_workspaces_cohort ON workspaces(cohort_week);
+CREATE INDEX IF NOT EXISTS idx_workspaces_source ON workspaces(source);
 
 CREATE TABLE IF NOT EXISTS agents (
   id                     TEXT PRIMARY KEY,

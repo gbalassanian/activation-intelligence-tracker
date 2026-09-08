@@ -15,14 +15,21 @@ import {
   InterventionCard,
   type SerializedCandidate,
 } from '@/components/dashboard/intervention-card';
-import { getInterventionState } from '@/lib/store';
+import { SourceFilter } from '@/components/dashboard/source-filter';
+import { getInterventionState, getWorkspaceHealths, parseScope, sourceCounts } from '@/lib/store';
 import { suppressionKey } from '@/lib/engine/interventions';
 import { formatNumber, formatTimestamp } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-export default function InterventionsPage() {
-  const { candidates, auditLog, suppressed, totalTargets } = getInterventionState();
+export default function InterventionsPage({
+  searchParams,
+}: {
+  searchParams: { source?: string };
+}) {
+  const scope = parseScope(searchParams.source);
+  const counts = sourceCounts(getWorkspaceHealths());
+  const { candidates, auditLog, suppressed, totalTargets } = getInterventionState(scope);
 
   const serialized: SerializedCandidate[] = candidates.map((candidate) => ({
     playbook: candidate.playbook,
@@ -48,13 +55,16 @@ export default function InterventionsPage() {
         title="Remediation playbooks"
         description="Every fired rule is routed to the ElevenLabs playbook that addresses its blocker. Triggering a playbook dispatches a mock webhook, email, or Slack event and appends it to the audit log; accounts contacted in the last 7 days are suppressed automatically."
         actions={
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <SourceFilter scope={scope} counts={counts} />
+            <div className="flex flex-wrap items-center gap-1.5">
             <Badge variant="outline" mono>
               <Target className="h-3 w-3" /> {formatNumber(totalTargets)} accounts routed
             </Badge>
-            <Badge variant="solid" mono>
-              <Zap className="h-3 w-3" /> {formatNumber(queuedDispatches)} dispatches queued
-            </Badge>
+              <Badge variant="solid" mono>
+                <Zap className="h-3 w-3" /> {formatNumber(queuedDispatches)} dispatches queued
+              </Badge>
+            </div>
           </div>
         }
       />
