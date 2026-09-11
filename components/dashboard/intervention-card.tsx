@@ -32,7 +32,7 @@ export interface SerializedCandidate {
   targets: Array<{
     workspaceId: string;
     workspaceName: string;
-    tier: string;
+    tier: string | null;
     milestone: InterventionCandidate['workspaces'][number]['milestone'];
     reason: string;
     suppressed: boolean;
@@ -166,7 +166,7 @@ export function InterventionCard({ candidate }: { candidate: SerializedCandidate
                       <span className="text-[12px] font-medium tracking-tight text-zinc-900">
                         {target.workspaceName}
                       </span>
-                      <Badge variant="neutral">{target.tier}</Badge>
+                      {target.tier ? <Badge variant="neutral">{target.tier}</Badge> : null}
                       <MilestoneBadge milestone={target.milestone} showLabel={false} />
                     </div>
                     <span className="font-mono text-[10px] leading-relaxed text-zinc-500">

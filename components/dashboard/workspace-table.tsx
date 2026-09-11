@@ -180,8 +180,8 @@ export function WorkspaceTable({ healths }: { healths: WorkspaceHealth[] }) {
                             {health.workspace.name}
                           </span>
                           <span className="whitespace-nowrap font-mono text-[10.5px] text-zinc-400">
-                            {health.workspace.id} · {health.workspace.tier} ·{' '}
-                            {health.workspace.region}
+                            {health.workspace.id} · {health.workspace.tier ?? '—'} ·{' '}
+                            {health.workspace.region ?? '—'}
                           </span>
                         </div>
                       </TableCell>
@@ -339,7 +339,7 @@ function AgentBreakdown({ health }: { health: WorkspaceHealth }) {
           <span className="text-zinc-400">use case</span> {health.workspace.useCase}
         </span>
         <span>
-          <span className="text-zinc-400">seats</span> {health.workspace.seats}
+          <span className="text-zinc-400">seats</span> {health.workspace.seats ?? '—'}
         </span>
         <span>
           <span className="text-zinc-400">signup</span> {health.workspace.createdAt.slice(0, 10)}

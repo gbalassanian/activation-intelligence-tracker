@@ -57,7 +57,7 @@ export function buildInterventionQueue(healths: WorkspaceHealth[]): Intervention
       push(routeSignal(health, signal), health, reasonFor(signal));
     }
 
-    if (HIGH_TOUCH_TIERS.has(health.workspace.tier)) {
+    if (health.workspace.tier !== null && HIGH_TOUCH_TIERS.has(health.workspace.tier)) {
       const lead = health.signals[0];
       push(
         'ENTERPRISE_SE_ESCALATION',

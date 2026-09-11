@@ -194,6 +194,7 @@ export function buildExecutiveMetrics(
     consumingGraduationRate: safeRate(consuming, total),
     atRiskCount,
     atRiskRate: safeRate(atRiskCount, total),
+    unknownTierWorkspaces: healths.filter((h) => h.workspace.tier === null).length,
     totalAgents: healths.reduce((sum, h) => sum + h.agents.length, 0),
     stalledAgents: healths.reduce((sum, h) => sum + h.stalledAgentCount, 0),
     newlyActivatedThisWeek,

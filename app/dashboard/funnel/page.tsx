@@ -248,8 +248,31 @@ export default function FunnelPage({
             </ul>
 
             <div className="mt-1 border-t border-zinc-200/80 pt-3">
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                 Activation by tier
+                <Tooltip
+                  content={
+                    <span className="flex flex-col gap-1.5">
+                      <span className="text-[11px] leading-relaxed text-zinc-500">
+                        Share of each subscription tier that reached{' '}
+                        <span className="text-zinc-700">M3 Activated</span> or beyond — deployed to
+                        production with at least 5 live conversations. The number after the dot is
+                        how many workspaces that tier holds.
+                      </span>
+                      <span className="text-[11px] leading-relaxed text-zinc-500">
+                        It answers whether willingness to pay predicts activation. A tier
+                        activating worse than a cheaper one is the signal worth chasing.
+                      </span>
+                    </span>
+                  }
+                  side="bottom"
+                  align="end"
+                  width="w-80"
+                >
+                  <span className="flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full border border-zinc-300 text-[9px] font-semibold text-zinc-400 transition-colors hover:border-zinc-400 hover:text-zinc-600">
+                    ?
+                  </span>
+                </Tooltip>
               </p>
               <ul className="flex flex-col gap-1.5">
                 {metrics.tierBreakdown.map((row) => (
@@ -268,6 +291,14 @@ export default function FunnelPage({
                     </span>
                   </li>
                 ))}
+                {metrics.unknownTierWorkspaces > 0 ? (
+                  <li className="flex items-center justify-between gap-3 border-t border-zinc-200/80 pt-1.5">
+                    <span className="text-[12px] text-zinc-400">Tier not reported</span>
+                    <span data-metric className="font-mono text-[11px] text-zinc-400">
+                      {formatNumber(metrics.unknownTierWorkspaces)}
+                    </span>
+                  </li>
+                ) : null}
               </ul>
             </div>
           </CardContent>

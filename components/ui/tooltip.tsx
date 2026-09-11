@@ -29,6 +29,8 @@ export function Tooltip({
         role="tooltip"
         className={cn(
           'pointer-events-none absolute z-40 hidden rounded-lg border border-zinc-200 bg-white p-3 text-left shadow-lg group-hover/tt:block group-focus/tt:block',
+          // Tooltips carry prose: never inherit a label's casing or tracking.
+          'font-normal normal-case tracking-normal',
           width,
           side === 'top' ? 'bottom-full mb-2' : 'top-full mt-2',
           align === 'start' && 'left-0',

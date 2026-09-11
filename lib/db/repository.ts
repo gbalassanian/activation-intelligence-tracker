@@ -89,14 +89,14 @@ function toWorkspace(row: WorkspaceRow): Workspace {
     id: row.id,
     name: row.name,
     source: (row.source ?? 'synthetic') as WorkspaceSource,
-    tier: row.tier as Tier,
-    region: row.region as Region,
+    tier: (row.tier || null) as Tier | null,
+    region: (row.region || null) as Region | null,
     useCase: row.use_case,
     owner: row.owner,
     createdAt: row.created_at,
     cohortWeek: row.cohort_week,
     creditQuota: row.credit_quota,
-    seats: row.seats,
+    seats: row.seats || null,
   };
 }
 
@@ -165,7 +165,10 @@ export function insertWorkspaces(workspaces: Workspace[]): void {
     VALUES (@id, @name, @source, @tier, @region, @useCase, @owner, @createdAt, @cohortWeek, @creditQuota, @seats)
   `);
   db.transaction((rows: Workspace[]) => {
-    for (const row of rows) stmt.run(row);
+    // The columns are NOT NULL; unknown attributes round-trip as empty / zero.
+    for (const row of rows) {
+      stmt.run({ ...row, tier: row.tier ?? '', region: row.region ?? '', seats: row.seats ?? 0 });
+    }
   })(workspaces);
 }
 

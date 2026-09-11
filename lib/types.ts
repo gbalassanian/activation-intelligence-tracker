@@ -91,8 +91,13 @@ export interface Workspace {
   name: string;
   /** 'synthetic' for generated data, 'elevenlabs' for a connected account. */
   source: WorkspaceSource;
-  tier: Tier;
-  region: Region;
+  /**
+   * Null when the source system does not report it. The ElevenLabs API exposes
+   * no subscription tier, region or seat count, and guessing one would put an
+   * invented plan on a real customer.
+   */
+  tier: Tier | null;
+  region: Region | null;
   /** Primary use case declared at signup, e.g. "Customer Support Deflection". */
   useCase: string;
   /** Named adoption strategist / SE owning the account. */
@@ -103,7 +108,7 @@ export interface Workspace {
   cohortWeek: string;
   /** Monthly voice credits included in the tier. */
   creditQuota: number;
-  seats: number;
+  seats: number | null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -403,6 +408,8 @@ export interface ExecutiveMetrics {
   newlyActivatedThisWeek: number;
   statusCounts: Record<RiskStatus, number>;
   tierBreakdown: Array<{ tier: Tier; workspaces: number; activationRate: number; atRisk: number }>;
+  /** Workspaces whose tier the source system never reported. */
+  unknownTierWorkspaces: number;
 }
 
 /* -------------------------------------------------------------------------- */

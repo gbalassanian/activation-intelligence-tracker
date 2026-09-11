@@ -313,14 +313,15 @@ export function mapAccount(snapshot: ElevenLabsAccountSnapshot): MappedAccount {
     id: workspaceId,
     name: snapshot.workspaceName,
     source: 'elevenlabs',
-    tier: 'Pro',
-    region: 'NA',
+    // The API reports no subscription tier or region for the workspace.
+    tier: null,
+    region: null,
     useCase: 'Connected ElevenLabs account',
     owner: '—',
     createdAt: provisionedAtIso,
     cohortWeek: startOfIsoWeek(provisionedAtIso),
     creditQuota: 0,
-    seats: 1,
+    seats: null,
   };
 
   return { workspace, agents, events, notes };
