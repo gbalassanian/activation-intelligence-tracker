@@ -19,81 +19,15 @@ playbook are inert, since a static page has no database. Run it locally for thos
 
 ---
 
-## Quick start
-
-```bash
-npm install
-npm run dev
-```
-
-Open <http://localhost:3000>. That is the whole setup — no database server, no API keys, no
-external services. On first read the app creates `data/tracker.db` (SQLite) and seeds it with 120
-synthetic workspaces spread across ten weekly signup cohorts, so every screen is populated
-immediately.
-
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Start the dev server (auto-creates and seeds the database) |
-| `npm run build` / `npm start` | Production build and serve |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` | ESLint (`next lint`) |
-| `npm run seed [count]` | Add a batch to the database from the CLI (default: the 120-workspace baseline) |
-| `npm run export:snapshot [file]` | Dump a full engine snapshot (metrics, funnel, cohorts, workspace health, intervention queue) to JSON |
-| `npm run db:reset` | Delete the local database; it reseeds on the next read |
-| `npm test` | Run the engine and ingest-mapping tests (`lib/*/__tests__`) |
-| `npm run ingest:elevenlabs` | Ingest a connected ElevenLabs account (needs `ELEVENLABS_API_KEY`) |
-
----
-
-## The five milestones
-
-Every agent moves through a linear, monotonic milestone chain. Gates are enforced by the engine,
-not by the seeder — a generated agent only reaches a milestone if its telemetry actually clears
-the gate.
-
-| | Milestone | Gate |
-| --- | --- | --- |
-| **M0** | Provisioned | Workspace created, tier selected (`Free` → `Enterprise`), API keys generated |
-| **M1** | Created | First Conversational Agent created — Voice ID assigned, system prompt configured, LLM provider and latency preset selected |
-| **M2** | Tested *(aha moment)* | First successful test conversation in the Web Simulator or SDK test bench: **≥10s**, zero synthesis or WebSocket errors |
-| **M3** | Activated *(technical value)* | Deployed via Web Widget, React SDK, or SIP/Twilio telephony **and** ≥5 live conversations |
-| **M4** | Consuming *(business value)* | Sustained usage in any trailing 30-day window: **≥50** live conversations with **≥3** distinct active days inside a single week, **or** **>40%** of tier voice credits consumed |
-
-### Workspace vs. agent resolution
-
-A workspace has **1:N agents**, and the two levels are resolved by different rules:
-
-- **Workspace funnel stage = `MAX(agent_milestone)`.** A customer with one agent at M4 Consuming
-  and a second at M1 Created stays **M4** in every macro metric.
-- **Secondary-agent failures never downgrade the workspace.** If a non-lead agent fails repeatedly,
-  the workspace keeps its status and shows a sub-badge: `Active (1 agent stalled)`.
-- **TTFV** = hours from workspace creation (M0) to the **first agent** reaching M2 Tested. Time to
-  activation (M3) and time to consuming (M4) are tracked alongside it.
-
-### Where the 30 days actually applies
-
-The dashboard never hides or expires an account — every workspace stays visible for as long as it
-exists, whatever its age. "30-day onboarding funnel" describes the period the metrics are designed
-around, not a retention window on the UI. Thirty days appears in exactly two places, both
-measurement windows:
-
-- **The M4 volume gate** counts conversations inside a **trailing** 30-day window, evaluated at
-  every conversation. It is not pinned to the signup date, so an account that ramps in month three
-  is measured on the same terms as one that ramps in week two. The credit path to M4 has no window
-  at all.
-- **`DORMANT_30D`** marks an account churned after 30 days of total silence below M4. That window
-  is relative to the last event, not to signup.
-
-Everything else — TTFV, the M1/M2/M3 gates, the 48h stall rule, the 14-day shelfware rule — has no
-30-day boundary.
-
-Milestones stay monotonic, so an account that reaches M4 and later goes quiet keeps M4 and is
-caught by the shelfware and dormancy rules instead. Current-state regression is the risk status's
-job, not the milestone's.
-
----
-
 ## Screens
+
+Everything below is read against one five-step chain, which every customer workspace moves along:
+
+**M0** Provisioned → **M1** agent Created → **M2** Tested *(the aha moment)* →
+**M3** Activated *(live in production)* → **M4** Consuming *(a sustained habit)*
+
+That is the whole vocabulary — [the exact gate for each step](#the-five-milestones) is further down.
+**TTFV** (Time-to-First-Value) is how long a workspace takes to get from M0 to M2.
 
 Every view is scoped by the **source selector** in its header — `All`, `Synthetic`, or `Real` —
 so aggregate metrics are never silently computed over a blend of generated and real accounts. The
@@ -202,6 +136,80 @@ is faked at the presentation layer. That is what each button's stated outcome is
 press *Simulate error-blocked agent* and the engine has to derive Error Blocked at M1 on its own,
 from the failed test conversations the scenario appended. If the rules were wrong, the button
 would visibly produce the wrong badge.
+
+---
+
+## Quick start
+
+```bash
+npm install
+npm run dev
+```
+
+Open <http://localhost:3000>. That is the whole setup — no database server, no API keys, no
+external services. On first read the app creates `data/tracker.db` (SQLite) and seeds it with 120
+synthetic workspaces spread across ten weekly signup cohorts, so every screen is populated
+immediately.
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the dev server (auto-creates and seeds the database) |
+| `npm run build` / `npm start` | Production build and serve |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint (`next lint`) |
+| `npm run seed [count]` | Add a batch to the database from the CLI (default: the 120-workspace baseline) |
+| `npm run export:snapshot [file]` | Dump a full engine snapshot (metrics, funnel, cohorts, workspace health, intervention queue) to JSON |
+| `npm run db:reset` | Delete the local database; it reseeds on the next read |
+| `npm test` | Run the engine and ingest-mapping tests (`lib/*/__tests__`) |
+| `npm run ingest:elevenlabs` | Ingest a connected ElevenLabs account (needs `ELEVENLABS_API_KEY`) |
+
+---
+
+## The five milestones
+
+Every agent moves through a linear, monotonic milestone chain. Gates are enforced by the engine,
+not by the seeder — a generated agent only reaches a milestone if its telemetry actually clears
+the gate.
+
+| | Milestone | Gate |
+| --- | --- | --- |
+| **M0** | Provisioned | Workspace created, tier selected (`Free` → `Enterprise`), API keys generated |
+| **M1** | Created | First Conversational Agent created — Voice ID assigned, system prompt configured, LLM provider and latency preset selected |
+| **M2** | Tested *(aha moment)* | First successful test conversation in the Web Simulator or SDK test bench: **≥10s**, zero synthesis or WebSocket errors |
+| **M3** | Activated *(technical value)* | Deployed via Web Widget, React SDK, or SIP/Twilio telephony **and** ≥5 live conversations |
+| **M4** | Consuming *(business value)* | Sustained usage in any trailing 30-day window: **≥50** live conversations with **≥3** distinct active days inside a single week, **or** **>40%** of tier voice credits consumed |
+
+### Workspace vs. agent resolution
+
+A workspace has **1:N agents**, and the two levels are resolved by different rules:
+
+- **Workspace funnel stage = `MAX(agent_milestone)`.** A customer with one agent at M4 Consuming
+  and a second at M1 Created stays **M4** in every macro metric.
+- **Secondary-agent failures never downgrade the workspace.** If a non-lead agent fails repeatedly,
+  the workspace keeps its status and shows a sub-badge: `Active (1 agent stalled)`.
+- **TTFV** = hours from workspace creation (M0) to the **first agent** reaching M2 Tested. Time to
+  activation (M3) and time to consuming (M4) are tracked alongside it.
+
+### Where the 30 days actually applies
+
+The dashboard never hides or expires an account — every workspace stays visible for as long as it
+exists, whatever its age. "30-day onboarding funnel" describes the period the metrics are designed
+around, not a retention window on the UI. Thirty days appears in exactly two places, both
+measurement windows:
+
+- **The M4 volume gate** counts conversations inside a **trailing** 30-day window, evaluated at
+  every conversation. It is not pinned to the signup date, so an account that ramps in month three
+  is measured on the same terms as one that ramps in week two. The credit path to M4 has no window
+  at all.
+- **`DORMANT_30D`** marks an account churned after 30 days of total silence below M4. That window
+  is relative to the last event, not to signup.
+
+Everything else — TTFV, the M1/M2/M3 gates, the 48h stall rule, the 14-day shelfware rule — has no
+30-day boundary.
+
+Milestones stay monotonic, so an account that reaches M4 and later goes quiet keeps M4 and is
+caught by the shelfware and dormancy rules instead. Current-state regression is the risk status's
+job, not the milestone's.
 
 ---
 
