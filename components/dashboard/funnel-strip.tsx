@@ -37,6 +37,18 @@ function StageTooltip({ stage, total }: { stage: FunnelStage; total: number }) {
             {formatPercent(stage.dropOffRate, 1)} ({formatNumber(stage.dropOffCount)})
           </span>
         </span>
+        {stage.dropOffCount > 0 ? (
+          <span className="flex justify-between gap-4">
+            <span className="text-zinc-400">└ of which</span>
+            <span>
+              <span className="text-rose-600">{formatNumber(stage.dropOffStalled)} stalled</span>
+              <span className="text-zinc-300"> · </span>
+              <span className="text-zinc-500">
+                {formatNumber(stage.dropOffInFlight)} still moving
+              </span>
+            </span>
+          </span>
+        ) : null}
         <span className="flex justify-between gap-4">
           <span className="text-zinc-400">median from M0</span>
           <span>{formatDuration(stage.medianHoursFromStart)}</span>

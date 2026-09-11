@@ -46,6 +46,13 @@ export function buildFunnel(healths: WorkspaceHealth[]): FunnelStage[] {
     const conversionFromPrevious = index === 0 ? 1 : safeRate(reached, previousReached);
     const dropOffCount = index === 0 ? 0 : Math.max(0, previousReached - reached);
 
+    // Those lost at this step are exactly the workspaces whose furthest
+    // milestone is the previous one, so the split is read off their signals.
+    const lost =
+      index === 0 ? [] : healths.filter((h) => h.milestone === MILESTONES[index - 1]);
+    const dropOffStalled = lost.filter((h) => h.signals.length > 0).length;
+    const dropOffInFlight = lost.length - dropOffStalled;
+
     // Dominant blocker among the workspaces resting at this stage.
     const blockerCounts = new Map<string, number>();
     for (const health of restingSet) {
@@ -70,6 +77,8 @@ export function buildFunnel(healths: WorkspaceHealth[]): FunnelStage[] {
       conversionFromPrevious,
       dropOffRate: index === 0 ? 0 : 1 - conversionFromPrevious,
       dropOffCount,
+      dropOffStalled,
+      dropOffInFlight,
       medianHoursFromStart: index === 0 ? 0 : median(times),
       topBlocker,
     };

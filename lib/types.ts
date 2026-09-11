@@ -348,6 +348,15 @@ export interface FunnelStage {
   dropOffRate: number;
   /** Count lost between the previous stage and this one. */
   dropOffCount: number;
+  /**
+   * The drop-off split by whether it is real. A workspace resting at the
+   * previous stage with a fired rule is genuinely stuck; one with no fired rule
+   * is simply still moving through the funnel and has not arrived yet. Counting
+   * both as loss overstates the leak, most of all at M4 where the consumption
+   * gate spans a 30-day window.
+   */
+  dropOffStalled: number;
+  dropOffInFlight: number;
   /** Median hours from M0 to reaching this stage. */
   medianHoursFromStart: number | null;
   /** Dominant blocker among workspaces resting at this stage. */
