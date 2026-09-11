@@ -31,6 +31,8 @@ immediately.
 | `npm run seed [count]` | Add a batch to the database from the CLI (default: the 120-workspace baseline) |
 | `npm run export:snapshot [file]` | Dump a full engine snapshot (metrics, funnel, cohorts, workspace health, intervention queue) to JSON |
 | `npm run db:reset` | Delete the local database; it reseeds on the next read |
+| `npm test` | Run the ingest-mapping tests |
+| `npm run ingest:elevenlabs` | Ingest a connected ElevenLabs account (needs `ELEVENLABS_API_KEY`) |
 
 ---
 
@@ -100,6 +102,66 @@ credit-consumption gate), multi-agent workspace (1 consuming + 1 stalled draft),
 error-blocked agent, and a batch of 100 realistic workspaces across ten cohorts. A reset button
 drops the dataset and regenerates the baseline. Every scenario writes real telemetry events — the
 dashboards recompute from that log, nothing is faked at the presentation layer.
+
+---
+
+## Connecting a real ElevenLabs account
+
+Synthetic data proves the engine works; it says nothing about real customers.
+To ingest an actual account:
+
+```bash
+ELEVENLABS_API_KEY=sk_... npm run ingest:elevenlabs -- --dry-run
+ELEVENLABS_API_KEY=sk_... npm run ingest:elevenlabs
+```
+
+Then switch the source selector to **Real**. Ingested workspaces are tagged
+`source: 'elevenlabs'` and never blend into synthetic aggregates by accident —
+selecting **All** with both present states the composition in the header.
+
+### What counts as production
+
+The API reports the **channel** a conversation arrived on, never whether a real
+customer was on the other end. So the M3 gate turns on a judgement call, made
+explicitly in `lib/ingest/elevenlabs.ts`:
+
+| Counts as production (M3) | Counts as development (M2) |
+| --- | --- |
+| `widget`, `sip_trunk`, `twilio`, `exotel`, `genesys`, `avaya`, `audiocodes`, `whatsapp`, and the business integrations (Zendesk, Salesforce, Intercom, Slack, Freshdesk, Telegram) | every SDK — `react_sdk`, `js_sdk`, `python_sdk`, `node_js_sdk`, `swift_sdk`, `flutter_sdk`, `android_sdk`, `react_native_sdk` — plus `template_preview` and `unknown` |
+
+Telephony and an embedded widget are only reachable by real end users. SDK
+traffic is most often the customer's own engineer building the integration, and
+counting it would hand out M3 to accounts that have never served anyone.
+
+**This deliberately under-counts.** A customer whose product *is* an app with
+the SDK embedded does serve real users through it, and will read as M2. That is
+the safer error: it keeps the account visible as an activation target instead of
+silently marking it won.
+
+### Two things the API cannot tell us
+
+- **No workspace creation date.** M0 falls back to the earliest agent creation,
+  so TTFV is measured from first agent rather than signup and the M0 → M1 leg
+  reads as zero. Pass `--signup <ISO date>` to measure it properly.
+- **No credit consumption.** The M4 credit gate never fires; only the
+  sustained-volume gate applies.
+
+Both are reported by the adapter at ingest time rather than hidden.
+
+### Technical failure vs. missed goal
+
+`status: 'failed'` is a transport failure — the call broke. `call_successful:
+'failure'` is the goal evaluation: an agent can complete a call flawlessly and
+still be scored a failure for not achieving its objective. Only the former
+feeds the error-blocked rule, so a merely unhelpful agent is never escalated as
+a broken one.
+
+### Privacy
+
+The adapter requests `summary_mode=exclude` and reads only timing, duration,
+channel and failure status. Transcripts and summaries are never fetched, and no
+real account data is committed to this repository — the test fixtures in
+`lib/ingest/__tests__` are synthetic.
 
 ---
 
