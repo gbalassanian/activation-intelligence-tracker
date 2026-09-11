@@ -30,9 +30,9 @@ const SCENARIO_BUTTONS: ScenarioButton[] = [
   {
     id: 'HAPPY_PATH',
     label: 'Simulate happy path',
-    detail: 'M0 → M4 in 5 days',
+    detail: 'M0 → M4 in under 5 days',
     expectation:
-      'Provisioned, agent created, tested, deployed, and graduated to Consuming through the >40% credit-consumption gate.',
+      'Provisioned, agent created, tested, deployed, and graduated to Consuming — it clears both M4 gates, sustained volume and >40% credit consumption.',
     Icon: Rocket,
   },
   {
@@ -48,7 +48,7 @@ const SCENARIO_BUTTONS: ScenarioButton[] = [
     label: 'Simulate shelfware account',
     detail: 'Activated, ~0 consumption',
     expectation:
-      'Deployed weeks ago but never scaled — flagged Shelfware and routed to the telephony scaling playbook.',
+      'Deployed weeks ago but never scaled. Flagged Shelfware once 14 days have passed since activation, and routed to the telephony scaling playbook.',
     Icon: PackageX,
   },
   {

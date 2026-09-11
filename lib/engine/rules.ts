@@ -70,7 +70,7 @@ export const STALLED_RULES: StalledRule[] = [
   {
     id: 'NO_PROGRESS_48H',
     name: 'No milestone progress',
-    definition: `More than ${RULE_THRESHOLDS.noProgressHours}h since the last milestone advance while below M4 Consuming.`,
+    definition: `More than ${RULE_THRESHOLDS.noProgressHours}h since the last milestone advance while below M3 Activated. Above M3 the governing rule is ACTIVATED_NOT_CONSUMING_14D.`,
     severity: 'medium',
     status: 'STALLED',
     interventionId: 'TEST_SIMULATOR_NUDGE',
@@ -102,7 +102,7 @@ export const INTERVENTION_PLAYBOOKS: InterventionPlaybook[] = [
   {
     id: 'LATENCY_OPTIMIZATION_GUIDE',
     title: 'Voice Latency, Audio Buffer & Prompt Optimization Guide',
-    trigger: 'Test call failures at M2 Tested',
+    trigger: 'Repeated test call failures, agent held at M1',
     description:
       'Agent test conversations are failing repeatedly. Dispatch the latency calibration runbook covering audio buffer sizing, WebSocket keep-alive, LLM provider timeout tuning, and voice model fallback selection.',
     asset: 'Voice Latency Runbook + Recommended latency preset diff',

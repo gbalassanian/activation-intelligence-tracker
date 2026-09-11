@@ -51,7 +51,7 @@ export const MILESTONE_DESCRIPTION: Record<Milestone, string> = {
   M1_CREATED:
     'First Conversational Agent created — Voice ID assigned, system prompt configured, LLM provider and latency preset selected.',
   M2_TESTED:
-    'Aha moment: first successful test conversation in the Web Simulator or SDK test bench (>10s, zero synthesis or WebSocket errors).',
+    'Aha moment: first successful test conversation in the Web Simulator or SDK test bench (10s or longer, zero synthesis or WebSocket errors).',
   M3_ACTIVATED:
     'Technical value: agent deployed to production via Web Widget, React SDK, or SIP/Twilio telephony with at least 5 live conversations.',
   M4_CONSUMING:

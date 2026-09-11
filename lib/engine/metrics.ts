@@ -166,9 +166,12 @@ export function buildExecutiveMetrics(
   const atRiskCount = AT_RISK_STATUSES.reduce((sum, status) => sum + statusCounts[status], 0);
 
   const weekStart = startOfIsoWeek(now);
+  // Reaching M3 Activated, matching what "Activated" means in every other view.
   const newlyActivatedThisWeek = healths.filter((h) => {
-    if (h.ttfvHours === null) return false;
-    const reachedAt = new Date(Date.parse(h.workspace.createdAt) + h.ttfvHours * 3_600_000);
+    if (h.timeToActivationHours === null) return false;
+    const reachedAt = new Date(
+      Date.parse(h.workspace.createdAt) + h.timeToActivationHours * 3_600_000,
+    );
     return startOfIsoWeek(reachedAt) === weekStart;
   }).length;
 

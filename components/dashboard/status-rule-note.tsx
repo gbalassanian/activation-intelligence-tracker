@@ -80,18 +80,18 @@ export function PortfolioHealthHelp() {
         see the rule behind it.
       </span>
       <span className="flex flex-col gap-1.5 border-t border-zinc-200/80 pt-2">
-        {PRECEDENCE.map((status, index) => {
-          const rule = RULES_BY_STATUS[status][0];
-          return (
-            <span key={status} className="flex items-baseline justify-between gap-3">
-              <span className="text-[11px] text-zinc-600">
-                <span className="font-mono text-[10px] text-zinc-400">{index + 1}. </span>
-                {RISK_LABEL[status]}
-              </span>
-              <span className="font-mono text-[10px] text-zinc-400">{rule?.id}</span>
+        {PRECEDENCE.map((status, index) => (
+          <span key={status} className="flex items-baseline justify-between gap-3">
+            <span className="shrink-0 text-[11px] text-zinc-600">
+              <span className="font-mono text-[10px] text-zinc-400">{index + 1}. </span>
+              {RISK_LABEL[status]}
             </span>
-          );
-        })}
+            {/* Every rule that assigns this status — Stalled has more than one. */}
+            <span className="text-right font-mono text-[10px] leading-relaxed text-zinc-400">
+              {RULES_BY_STATUS[status].map((rule) => rule.id).join(' · ')}
+            </span>
+          </span>
+        ))}
       </span>
       <span className="border-t border-zinc-200/80 pt-2 text-[11px] leading-relaxed text-zinc-500">
         When several rules fire, the most severe wins — that is the order above. A workspace with

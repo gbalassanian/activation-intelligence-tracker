@@ -79,7 +79,7 @@ export default function FunnelPage({
           caption="P50 signup → first successful test conversation"
           tone="neutral"
           Icon={Timer}
-          tooltip="Time-to-First-Value: hours from workspace creation (M0) to the first agent in the workspace reaching M2 Tested — a test conversation over 10 seconds with zero synthesis or WebSocket errors."
+          tooltip="Time-to-First-Value: hours from workspace creation (M0) to the first agent in the workspace reaching M2 Tested — a successful test conversation of 10 seconds or longer, with zero synthesis or WebSocket errors."
           footnote={
             ttfvDelta === null ? null : (
               <span className="font-mono">
@@ -154,7 +154,7 @@ export default function FunnelPage({
           caption="M0 → M4 Consuming (sustained habit)"
           tone="emerald"
           Icon={TrendingUp}
-          tooltip="Share of workspaces reaching sustained usage in any trailing 30-day window: 50+ live conversations across 3+ distinct active days in a week, or more than 40% of tier voice credits consumed. The window trails the account rather than its signup date, so an account that ramps late is measured on the same terms as one that ramps immediately."
+          tooltip="Share of workspaces reaching sustained usage in any trailing 30-day window: 50+ live conversations with 3+ distinct active days inside a single week, or more than 40% of tier voice credits consumed. The window trails the account rather than its signup date, so an account that ramps late is measured on the same terms as one that ramps immediately."
           footnote={
             <span className="font-mono">
               {formatNumber(metrics.newlyActivatedThisWeek)} newly activated this week
@@ -167,7 +167,7 @@ export default function FunnelPage({
           caption={`${formatPercent(metrics.atRiskRate, 0)} of the book — stalled, error blocked, or shelfware`}
           tone={metrics.atRiskCount > 0 ? 'rose' : 'emerald'}
           Icon={AlertTriangle}
-          tooltip="Workspaces with at least one fired rule: no milestone progress for 48h, three or more consecutive test-call failures, or activated 14+ days ago without reaching sustained consumption. Churned accounts are tracked separately."
+          tooltip="Workspaces whose current status is Stalled, Error Blocked or Shelfware — no milestone progress for 48h below M3, provisioned 48h+ ago with no agent, three or more consecutive test-call failures, or activated 14+ days ago without reaching sustained consumption. Status comes from the workspace and its lead agent, so a failing secondary agent does not put an account here. Churned accounts are tracked separately."
           footnote={
             <span className="font-mono">
               {formatNumber(metrics.statusCounts.CHURNED)} churned ·{' '}
@@ -209,8 +209,8 @@ export default function FunnelPage({
               </Tooltip>
             </CardTitle>
             <CardDescription>
-              Current status distribution across all workspaces. Hover a status for the rule that
-              assigns it.
+              Current status distribution across the workspaces in scope. Hover a status for the rule
+              that assigns it.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">

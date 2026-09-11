@@ -102,10 +102,11 @@ export default function LiveFeedPage({
                 </div>
               ))}
               <p className="border-t border-zinc-200/80 pt-2.5 font-mono text-[10px] leading-relaxed text-zinc-400">
-                gates · M2 test &gt;{RULE_THRESHOLDS.testDurationSeconds}s ·{' '}
+                gates · M2 test ≥{RULE_THRESHOLDS.testDurationSeconds}s ·{' '}
                 M3 ≥{RULE_THRESHOLDS.activationConversations} live calls ·{' '}
                 M4 ≥{RULE_THRESHOLDS.consumingConversations} calls /{' '}
-                ≥{RULE_THRESHOLDS.consumingActiveDays} active days or &gt;
+                ≥{RULE_THRESHOLDS.consumingActiveDays} active days in a week, inside any{' '}
+                trailing {RULE_THRESHOLDS.consumingWindowDays}d window, or &gt;
                 {Math.round(RULE_THRESHOLDS.consumingCreditPct * 100)}% credits
               </p>
             </CardContent>
