@@ -8,6 +8,15 @@ and instead of filing a ticket, they abandon the workspace. This app tracks the 
 funnel of every customer workspace in real time, computes Time-to-First-Value (TTFV), diagnoses
 ElevenLabs-specific runtime blockers automatically, and routes each one to a remediation playbook.
 
+**[Open the live dashboard →](https://claude.ai/code/artifact/b7e3ce8a-c87b-4e81-9bed-97027c3fd500)**
+
+A static snapshot of the running app: the real engine output, exported to JSON and rendered as a
+standalone page. Every number in it was computed by the code in this repository. Use the
+**source selector** in the header to switch between the synthetic portfolio and a connected real
+ElevenLabs account — the screenshots below are all from the synthetic scope. Navigation, filters,
+search, sorting and tooltips all work there; the buttons that would write telemetry or dispatch a
+playbook are inert, since a static page has no database. Run it locally for those.
+
 ---
 
 ## Quick start
@@ -90,34 +99,73 @@ Every view is scoped by the **source selector** in its header — `All`, `Synthe
 so aggregate metrics are never silently computed over a blend of generated and real accounts. The
 scope travels with navigation and filters the telemetry stream too.
 
-**`/dashboard/funnel` — Executive & Cohorts**
+### `/dashboard/funnel` — Executive & Cohorts
+
+![Activation funnel: six KPI cards over the linear five-stage funnel strip, each stage showing how many workspaces reached it and the drop-off from the previous one](docs/screenshots/01-funnel-overview.png)
+
 Six KPIs: median and P90 TTFV, time to production (M0→M3 in days), full activation rate (M0→M3),
 consuming graduation rate (M0→M4), and the at-risk counter. Each carries a tooltip stating the
-exact gate it measures.
+exact gate it measures, so no number on this page is a black box.
 
-Below: the linear 5-step funnel strip, a TTFV velocity chart by signup week, portfolio health, and
-the weekly cohort TTFV matrix showing activation velocity and friction surges week over week.
+The funnel strip below them is the whole portfolio in one line. Reading the screenshot: 120
+workspaces provisioned, 115 created an agent, 89 got a successful test call, 68 reached production,
+42 sustained usage. The biggest single leak is **M4 at −38%** — accounts that went live and never
+built a habit — which is a different problem, and a different playbook, from the 23% who never
+deployed at all.
 
 Per-stage **drop-off is split into `stalled` and `still moving`**, because the raw number conflates
 two different things: a workspace resting at the previous stage with a fired rule is genuinely
 stuck, while one with no fired rule simply has not arrived yet. Counting both as loss overstates
 the leak — most of all at M4, where the consumption gate spans a 30-day window.
 
+![TTFV velocity chart by signup week beside the portfolio health panel, above the weekly cohort matrix](docs/screenshots/02-cohorts-health.png)
+
+**Cohorts are weekly signup buckets**, which is what makes the TTFV numbers comparable: a cohort
+that signed up three weeks ago has had three weeks to activate, so comparing it against one that
+signed up yesterday would measure elapsed time, not friction. The `Δ vs prev` column is the whole
+point — a negative delta means this week's customers hit their aha moment faster than last week's;
+a positive one is a friction surge worth diagnosing while it is still happening.
+
+**Activation by tier** answers whether willingness to pay predicts activation. In the screenshot it
+does not: Free activates at 69% and Enterprise at 50%. That inversion is the signal — bigger
+accounts have more stakeholders, more security review, and more custom integration work between
+signup and first production call.
+
+![The portfolio health panel with its help tooltip open, listing each risk status against the detector rules that assign it](docs/screenshots/03-portfolio-health-rules.png)
+
 **Portfolio health** shows the status distribution, with the rule behind each status on hover and a
-`?` explaining the whole model: statuses are ordered by severity, the most severe wins, and status
-is computed from the workspace and its **lead agent only** — so a failing secondary agent shows as
-an `agent stalled` sub-badge rather than downgrading the account.
+`?` explaining the whole model. Statuses are ordered by severity and the most severe wins, so every
+workspace carries exactly one. Status is computed from the workspace and its **lead agent only** —
+a failing secondary agent shows as an `agent stalled` sub-badge rather than downgrading an account
+that is otherwise working. The rule IDs in that panel are read straight off the engine's rule
+catalogue, so the explanation cannot drift from what actually runs.
 
-**`/dashboard/live-feed` — Live At-Risk & Agent Feed**
-Every workspace with its agent roster, filterable by status (`Optimal`, `Stalled (>48h)`,
-`Error Blocked`, `Shelfware`, `Churned`) and searchable across workspaces, agents, owners, and
-diagnostics. Each row carries a monospace root-cause string —
-`3x test call failures — SIP Trunk Timeout`, `Agent created 72h ago without a test call`,
-`Activated 33d ago with 4 weekly calls — below consumption gate`. Expanding a row shows every
-agent's voice, LLM, latency preset, observed P50 latency, live call volume, and the exact rules
-that fired. A live telemetry stream and the detector's rule definitions sit alongside.
+### `/dashboard/live-feed` — Live At-Risk & Agent Feed
 
-**`/dashboard/interventions` — Proactive Intervention Center**
+![Workspace operations table sorted by severity, with one row expanded to show its agent configuration and the rules that fired](docs/screenshots/04-live-feed.png)
+
+The operational counterpart to the executive view: not *how many* accounts are stuck, but *which
+ones and why*. Filterable by status and searchable across workspaces, agents, owners and
+diagnostics; sorted by severity by default, so whatever is most broken is the first thing on screen.
+
+The column that earns the page is **root-cause diagnostic** — a generated string, not a status
+label. The four Error Blocked accounts visible here share a status but not a problem:
+`WebSocket Disconnect` twice, `Invalid Voice ID`, `LLM Provider Timeout`. Same badge, three
+different fixes. A dashboard that stopped at "Error Blocked" would send one generic email to all
+four.
+
+Expanding a row shows the workspace metadata, then a card per agent with its real configuration —
+voice, voice ID, LLM, latency preset, observed P50 latency, live call volume, credits, idle time —
+and a **FIRED RULES** block naming every rule that matched and the evidence it matched on. That
+block is the audit trail: it is why the account is flagged, in the engine's own words.
+
+Notice that all four are at **M1 Created with no TTFV**. They are not stalled customers who lost
+interest; they never got a single test call to work.
+
+### `/dashboard/interventions` — Proactive Intervention Center
+
+![Remediation playbook cards, each showing its trigger, the asset it sends, the owning role, and how many accounts are routed to it](docs/screenshots/05-interventions.png)
+
 Each fired rule routes to the playbook that addresses its blocker:
 
 | Blocker | Playbook |
@@ -130,15 +178,30 @@ Each fired rule routes to the playbook that addresses its blocker:
 | Provisioned without an agent | Guided Agent Builder & Voice Selection Walkthrough |
 | No telemetry for 30+ days | Dormant Workspace Reactivation Campaign |
 
-One-click **Trigger** (or **Dispatch all**) fires a mock webhook / email / Slack event and appends
-it to the audit log. Accounts contacted in the last 7 days are suppressed automatically.
+Each card carries the trigger that routed the account there, the asset it sends, the channel, the
+owning role, and the count of accounts queued behind it. Routing is not one-rule-one-playbook:
+`NO_PROGRESS_48H` fires at both M1 and M2, and the blocker is different at each, so the router
+reads the workspace's milestone and sends an untested agent to the simulator nudge but a
+tested-but-undeployed one to the deployment quickstart.
 
-**`/simulator` — Interactive Telemetry Simulator**
+One-click **Trigger** (or **Dispatch all**) fires a mock webhook / email / Slack event and appends
+it to the audit log. Accounts contacted in the last 7 days are suppressed automatically, so a
+strategist working the queue never sends the same account the same thing twice.
+
+### `/simulator` — Interactive Telemetry Simulator
+
+![Telemetry simulator with one button per scenario, each naming the outcome the engine should derive from the events it writes](docs/screenshots/06-simulator.png)
+
 Buttons to generate live synthetic events: happy path (M0 → M4 in under 5 days, clearing both M4
 gates), multi-agent workspace (1 consuming + 1 stalled draft), shelfware account, error-blocked
-agent, and a batch of 100 realistic workspaces across ten cohorts. A reset button
-drops the dataset and regenerates the baseline. Every scenario writes real telemetry events — the
-dashboards recompute from that log, nothing is faked at the presentation layer.
+agent, and a batch of 100 realistic workspaces across ten cohorts. A reset button drops the dataset
+and regenerates the baseline.
+
+Every scenario writes **real telemetry events** — the dashboards recompute from that log, nothing
+is faked at the presentation layer. That is what each button's stated outcome is really asserting:
+press *Simulate error-blocked agent* and the engine has to derive Error Blocked at M1 on its own,
+from the failed test conversations the scenario appended. If the rules were wrong, the button
+would visibly produce the wrong badge.
 
 ---
 
