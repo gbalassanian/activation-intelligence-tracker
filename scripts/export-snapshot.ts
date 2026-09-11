@@ -13,7 +13,7 @@ import { buildCohorts, buildExecutiveMetrics, buildFunnel, buildTtfvTrend } from
 import { buildInterventionQueue } from '../lib/engine/interventions';
 import { STALLED_RULES, RULE_THRESHOLDS } from '../lib/engine/rules';
 import { MILESTONE_DESCRIPTION, MILESTONES, MILESTONE_LABEL, MILESTONE_SHORT, DEPLOYMENT_LABEL } from '../lib/types';
-import type { WorkspaceHealth } from '../lib/types';
+import type { SourceScope, WorkspaceHealth } from '../lib/types';
 import { writeFileSync } from 'node:fs';
 
 const now = new Date();
@@ -36,6 +36,7 @@ const healths: WorkspaceHealth[] = ds.workspaces.map((w) =>
 const slimHealths = healths.map((h) => ({
   id: h.workspace.id,
   name: h.workspace.name,
+  source: h.workspace.source,
   tier: h.workspace.tier,
   region: h.workspace.region,
   owner: h.workspace.owner,
@@ -76,6 +77,7 @@ const slimHealths = healths.map((h) => ({
   })),
 }));
 
+const sourceByWorkspace = new Map(ds.workspaces.map((w) => [w.id, w.source]));
 const cohorts = buildCohorts(healths);
 const queue = buildInterventionQueue(healths);
 
@@ -85,22 +87,53 @@ const recentEvents = [...ds.events]
   .map((e) => ({
     id: e.id, type: e.eventType, status: e.status, milestone: e.milestone,
     ref: e.agentId ?? e.workspaceId, ts: e.timestamp, meta: e.metadata,
+    source: sourceByWorkspace.get(e.workspaceId) ?? 'synthetic',
   }));
+
+/**
+ * Aggregates are precomputed per scope so the static preview can switch
+ * sources without reimplementing the engine in browser JavaScript.
+ */
+function aggregatesFor(scope: SourceScope) {
+  const subset =
+    scope === 'all' ? healths : healths.filter((h) => h.workspace.source === scope);
+  const scopedCohorts = buildCohorts(subset);
+  const scopedQueue = buildInterventionQueue(subset);
+  return {
+    metrics: buildExecutiveMetrics(subset, now),
+    funnel: buildFunnel(subset),
+    cohorts: scopedCohorts,
+    trend: buildTtfvTrend(scopedCohorts),
+    interventions: scopedQueue.map((c) => ({
+      playbook: c.playbook,
+      targets: c.workspaces.map((w) => ({
+        id: w.workspace.id, name: w.workspace.name, tier: w.workspace.tier,
+        milestone: w.milestone, reason: c.reasons[w.workspace.id],
+      })),
+    })),
+    totals: {
+      workspaces: subset.length,
+      agents: subset.reduce((n, h) => n + h.agents.length, 0),
+      events: ds.events.filter((e) =>
+        subset.some((h) => h.workspace.id === e.workspaceId),
+      ).length,
+    },
+  };
+}
 
 const payload = {
   generatedAt: now.toISOString(),
-  metrics: buildExecutiveMetrics(healths, now),
-  funnel: buildFunnel(healths),
-  cohorts,
-  trend: buildTtfvTrend(cohorts),
+  scopes: {
+    all: aggregatesFor('all'),
+    synthetic: aggregatesFor('synthetic'),
+    elevenlabs: aggregatesFor('elevenlabs'),
+  },
+  counts: {
+    all: healths.length,
+    synthetic: healths.filter((h) => h.workspace.source === 'synthetic').length,
+    elevenlabs: healths.filter((h) => h.workspace.source === 'elevenlabs').length,
+  },
   healths: slimHealths,
-  interventions: queue.map((c) => ({
-    playbook: c.playbook,
-    targets: c.workspaces.map((w) => ({
-      id: w.workspace.id, name: w.workspace.name, tier: w.workspace.tier,
-      milestone: w.milestone, reason: c.reasons[w.workspace.id],
-    })),
-  })),
   recentEvents,
   rules: STALLED_RULES,
   thresholds: RULE_THRESHOLDS,
@@ -113,5 +146,12 @@ const payload = {
 const out = process.argv[2] ?? 'engine-snapshot.json';
 writeFileSync(out, JSON.stringify(payload));
 console.log('wrote', out, (JSON.stringify(payload).length / 1024).toFixed(0) + 'KB');
-console.log('workspaces', payload.totals.workspaces, 'agents', payload.totals.agents, 'events', payload.totals.events);
-console.log('playbooks', payload.interventions.length, 'cohorts', cohorts.length);
+console.log('workspaces', ds.workspaces.length, 'agents', ds.agents.length, 'events', ds.events.length);
+for (const scope of ['all', 'synthetic', 'elevenlabs'] as const) {
+  const s = payload.scopes[scope];
+  console.log(
+    `  ${scope.padEnd(11)} workspaces=${String(s.totals.workspaces).padStart(3)}`,
+    `cohorts=${String(s.cohorts.length).padStart(2)}`,
+    `playbooks=${s.interventions.length}`,
+  );
+}
