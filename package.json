@@ -12,7 +12,7 @@
     "seed": "tsx scripts/seed.ts",
     "export:snapshot": "tsx scripts/export-snapshot.ts",
     "db:reset": "node -e \"require('fs').rmSync('data/tracker.db',{force:true});console.log('database reset')\"",
-    "test": "tsx --test lib/ingest/__tests__/*.test.ts",
+    "test": "tsx --test lib/*/__tests__/*.test.ts",
     "ingest:elevenlabs": "tsx scripts/ingest-elevenlabs.ts"
   },
   "dependencies": {

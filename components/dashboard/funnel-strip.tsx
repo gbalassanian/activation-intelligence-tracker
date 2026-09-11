@@ -72,8 +72,9 @@ export function FunnelStrip({ stages, total }: { stages: FunnelStage[]; total: n
       <CardHeader>
         <CardTitle>Linear onboarding funnel</CardTitle>
         <CardDescription>
-          Day 1 to Day 30 progression across {formatNumber(total)} workspaces. A workspace counts as
-          having reached a stage when any of its agents has — the highest-milestone rule.
+          Milestone progression across {formatNumber(total)} workspaces, from signup onward. A
+          workspace counts as having reached a stage when any of its agents has — the
+          highest-milestone rule.
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -21,6 +21,13 @@ export const RULE_THRESHOLDS = {
   consumingConversations: 50,
   /** M4 gate: distinct active days required in the window. */
   consumingActiveDays: 3,
+  /**
+   * M4 gate: length of the sustained-usage window, in days. The window is
+   * trailing rather than pinned to the signup date — an account that ramps
+   * late still has to clear the same bar, but it is no longer measured
+   * against a stretch of calendar it has already passed.
+   */
+  consumingWindowDays: 30,
   /** M4 alternative gate: share of tier voice credits consumed. */
   consumingCreditPct: 0.4,
   /** M2 gate: minimum successful test-conversation duration. */

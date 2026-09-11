@@ -55,7 +55,7 @@ export const MILESTONE_DESCRIPTION: Record<Milestone, string> = {
   M3_ACTIVATED:
     'Technical value: agent deployed to production via Web Widget, React SDK, or SIP/Twilio telephony with at least 5 live conversations.',
   M4_CONSUMING:
-    'Business value and habit: sustained Day 7–30 usage — 50+ live conversations across 3+ distinct active days, or >40% voice tier credit consumption.',
+    'Business value and habit: sustained usage in any trailing 30-day window — 50+ live conversations across 3+ distinct active days, or >40% voice tier credit consumption.',
 };
 
 /* -------------------------------------------------------------------------- */

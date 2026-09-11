@@ -48,7 +48,7 @@ the gate.
 | **M1** | Created | First Conversational Agent created — Voice ID assigned, system prompt configured, LLM provider and latency preset selected |
 | **M2** | Tested *(aha moment)* | First successful test conversation in the Web Simulator or SDK test bench: **>10s**, zero synthesis or WebSocket errors |
 | **M3** | Activated *(technical value)* | Deployed via Web Widget, React SDK, or SIP/Twilio telephony **and** ≥5 live conversations |
-| **M4** | Consuming *(business value)* | Days 7–30 sustained usage: **≥50** live conversations across **≥3** distinct active days in a week, **or** **>40%** of tier voice credits consumed |
+| **M4** | Consuming *(business value)* | Sustained usage in any trailing 30-day window: **≥50** live conversations across **≥3** distinct active days in a week, **or** **>40%** of tier voice credits consumed |
 
 ### Workspace vs. agent resolution
 

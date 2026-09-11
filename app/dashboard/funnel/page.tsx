@@ -154,7 +154,7 @@ export default function FunnelPage({
           caption="M0 → M4 Consuming (sustained habit)"
           tone="emerald"
           Icon={TrendingUp}
-          tooltip="Share of workspaces reaching sustained Day 7–30 usage: 50+ live conversations across 3+ distinct active days in a week, or more than 40% of tier voice credits consumed."
+          tooltip="Share of workspaces reaching sustained usage in any trailing 30-day window: 50+ live conversations across 3+ distinct active days in a week, or more than 40% of tier voice credits consumed. The window trails the account rather than its signup date, so an account that ramps late is measured on the same terms as one that ramps immediately."
           footnote={
             <span className="font-mono">
               {formatNumber(metrics.newlyActivatedThisWeek)} newly activated this week

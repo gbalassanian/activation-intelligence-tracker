@@ -43,8 +43,9 @@ export interface AgentDerivation {
  *   M1 agent created
  *   M2 successful test conversation lasting >= 10s with no synthesis/WS error
  *   M3 deployed to a production surface AND >= 5 live conversations
- *   M4 >= 50 live conversations across >= 3 distinct active days in a week
- *      during days 7–30, OR > 40% of tier voice credits consumed
+ *   M4 >= 50 live conversations across >= 3 distinct active days in a week,
+ *      inside any trailing 30-day window, OR > 40% of tier voice credits
+ *      consumed
  */
 export function deriveAgent(
   agent: Agent,
@@ -63,12 +64,14 @@ export function deriveAgent(
   let deployed = false;
   let testAttempts = 0;
   const latencies: number[] = [];
-  const activeDaysByWeek = new Map<string, Set<string>>();
-
-  const workspaceStart = Date.parse(workspace.createdAt);
-  const windowStart = workspaceStart + 7 * DAY_MS;
-  const windowEnd = workspaceStart + 30 * DAY_MS;
-  let windowConversations = 0;
+  /**
+   * Successful production conversations in arrival order. The M4 gate reads a
+   * trailing window off this log instead of a window pinned to the signup
+   * date, so an account that ramps in month three is measured on the same
+   * terms as one that ramps in week two.
+   */
+  const conversationLog: Array<{ at: number; count: number; day: string; week: string }> = [];
+  const consumingWindowMs = RULE_THRESHOLDS.consumingWindowDays * DAY_MS;
 
   const advance = (target: Milestone, at: string) => {
     const targetRank = MILESTONE_RANK[target];
@@ -81,21 +84,45 @@ export function deriveAgent(
     rank = targetRank;
   };
 
-  const bestActiveDays = () => {
-    let best = 0;
-    for (const days of activeDaysByWeek.values()) best = Math.max(best, days.size);
-    return best;
+  /**
+   * Conversation volume and weekly spread over the window ending at `at`.
+   * Walks backwards from the newest entry and stops at the window edge, so the
+   * cost is proportional to the window rather than to the whole history.
+   */
+  const rollingUsage = (at: number) => {
+    const from = at - consumingWindowMs;
+    let conversations = 0;
+    const daysByWeek = new Map<string, Set<string>>();
+    for (let i = conversationLog.length - 1; i >= 0; i -= 1) {
+      const entry = conversationLog[i];
+      if (entry.at < from) break;
+      conversations += entry.count;
+      const days = daysByWeek.get(entry.week) ?? new Set<string>();
+      days.add(entry.day);
+      daysByWeek.set(entry.week, days);
+    }
+    let bestActiveDays = 0;
+    for (const days of daysByWeek.values()) bestActiveDays = Math.max(bestActiveDays, days.size);
+    return { conversations, bestActiveDays };
   };
+
+  /** Usage over the window ending at the most recent conversation. */
+  const latestUsage = () =>
+    conversationLog.length === 0
+      ? { conversations: 0, bestActiveDays: 0 }
+      : rollingUsage(conversationLog[conversationLog.length - 1].at);
 
   const checkUsageGates = (at: string) => {
     if (deployed && liveConversations >= RULE_THRESHOLDS.activationConversations) {
       advance('M3_ACTIVATED', at);
     }
+    if (rank < MILESTONE_RANK.M3_ACTIVATED) return;
+    const usage = rollingUsage(Date.parse(at));
     const volumeGate =
-      windowConversations >= RULE_THRESHOLDS.consumingConversations &&
-      bestActiveDays() >= RULE_THRESHOLDS.consumingActiveDays;
+      usage.conversations >= RULE_THRESHOLDS.consumingConversations &&
+      usage.bestActiveDays >= RULE_THRESHOLDS.consumingActiveDays;
     const creditGate = creditConsumptionPct > RULE_THRESHOLDS.consumingCreditPct;
-    if (rank >= MILESTONE_RANK.M3_ACTIVATED && (volumeGate || creditGate)) {
+    if (volumeGate || creditGate) {
       advance('M4_CONSUMING', at);
     }
   };
@@ -138,15 +165,12 @@ export function deriveAgent(
         const count = typeof meta.conversationCount === 'number' ? meta.conversationCount : 1;
         if (event.status === 'success') {
           liveConversations += count;
-          const at = Date.parse(event.timestamp);
-          if (at >= windowStart && at <= windowEnd) {
-            windowConversations += count;
-            const week = startOfIsoWeek(event.timestamp);
-            const day = event.timestamp.slice(0, 10);
-            const set = activeDaysByWeek.get(week) ?? new Set<string>();
-            set.add(day);
-            activeDaysByWeek.set(week, set);
-          }
+          conversationLog.push({
+            at: Date.parse(event.timestamp),
+            count,
+            day: event.timestamp.slice(0, 10),
+            week: startOfIsoWeek(event.timestamp),
+          });
           checkUsageGates(event.timestamp);
         } else {
           lastErrorCode = (meta.errorDetails as ErrorCode | undefined) ?? lastErrorCode;
@@ -185,7 +209,7 @@ export function deriveAgent(
     consecutiveTestFailures,
     lastErrorCode,
     liveConversations,
-    distinctActiveDays: bestActiveDays(),
+    distinctActiveDays: latestUsage().bestActiveDays,
     creditConsumptionPct,
     medianLatencyMs,
     deployed,
