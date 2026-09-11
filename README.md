@@ -19,7 +19,7 @@ playbook are inert, since a static page has no database. Run it locally for thos
 
 ---
 
-## Screens
+## What it looks like
 
 Everything below is read against one five-step chain, which every customer workspace moves along:
 
