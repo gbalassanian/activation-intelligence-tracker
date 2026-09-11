@@ -5,6 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { FunnelStrip } from '@/components/dashboard/funnel-strip';
 import { CohortMatrix } from '@/components/dashboard/cohort-matrix';
+import {
+  PortfolioHealthHelp,
+  StatusRuleNote,
+} from '@/components/dashboard/status-rule-note';
+import { Tooltip } from '@/components/ui/tooltip';
 import { TtfvChart } from '@/components/dashboard/ttfv-chart';
 import { SourceFilter, EmptyScope } from '@/components/dashboard/source-filter';
 import { getDashboardState, parseScope } from '@/lib/store';
@@ -190,8 +195,23 @@ export default function FunnelPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Portfolio health</CardTitle>
-            <CardDescription>Current status distribution across all workspaces.</CardDescription>
+            <CardTitle className="flex items-center gap-1.5">
+              Portfolio health
+              <Tooltip
+                content={<PortfolioHealthHelp />}
+                side="bottom"
+                align="end"
+                width="w-80"
+              >
+                <span className="flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full border border-zinc-300 text-[9px] font-semibold text-zinc-400 transition-colors hover:border-zinc-400 hover:text-zinc-600">
+                  ?
+                </span>
+              </Tooltip>
+            </CardTitle>
+            <CardDescription>
+              Current status distribution across all workspaces. Hover a status for the rule that
+              assigns it.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex h-2 w-full overflow-hidden rounded-full bg-zinc-100">
@@ -210,15 +230,19 @@ export default function FunnelPage({
 
             <ul className="flex flex-col gap-2">
               {RISK_STATUSES.map((status) => (
-                <li key={status} className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2">
-                    <span className={cn('h-2 w-2 rounded-full', STATUS_BAR[status])} />
-                    <span className="text-[12px] text-zinc-600">{RISK_LABEL[status]}</span>
-                  </span>
-                  <span data-metric className="font-mono text-[11px] text-zinc-500">
-                    {formatNumber(metrics.statusCounts[status])} ·{' '}
-                    {formatPercent(metrics.statusCounts[status] / metrics.totalWorkspaces, 0)}
-                  </span>
+                <li key={status}>
+                  <StatusRuleNote status={status}>
+                    <span className="flex w-full cursor-help items-center justify-between gap-3 rounded-md py-0.5 transition-colors hover:bg-zinc-50">
+                      <span className="flex items-center gap-2">
+                        <span className={cn('h-2 w-2 rounded-full', STATUS_BAR[status])} />
+                        <span className="text-[12px] text-zinc-600">{RISK_LABEL[status]}</span>
+                      </span>
+                      <span data-metric className="font-mono text-[11px] text-zinc-500">
+                        {formatNumber(metrics.statusCounts[status])} ·{' '}
+                        {formatPercent(metrics.statusCounts[status] / metrics.totalWorkspaces, 0)}
+                      </span>
+                    </span>
+                  </StatusRuleNote>
                 </li>
               ))}
             </ul>
