@@ -14,10 +14,47 @@ import { buildInterventionQueue } from '../lib/engine/interventions';
 import { STALLED_RULES, RULE_THRESHOLDS } from '../lib/engine/rules';
 import { MILESTONE_DESCRIPTION, MILESTONES, MILESTONE_LABEL, MILESTONE_SHORT, DEPLOYMENT_LABEL } from '../lib/types';
 import type { SourceScope, WorkspaceHealth } from '../lib/types';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { mapAccount } from '../lib/ingest/elevenlabs';
 
 const now = new Date();
 const ds = generateSeedDataset(20260829, now);
+
+/*
+ * Optionally merge a connected account, so the preview can show both sources
+ * side by side:
+ *   tsx scripts/export-snapshot.ts out.json --account ./account-snapshot.json
+ *
+ * The file is read from disk and never lives in this repository: it holds
+ * private account data.
+ */
+const accountFlag = process.argv.indexOf('--account');
+if (accountFlag !== -1) {
+  const accountPath = process.argv[accountFlag + 1];
+  if (!accountPath) {
+    console.error('--account expects a path to an account snapshot JSON');
+    process.exit(1);
+  }
+  const parsed = JSON.parse(readFileSync(accountPath, 'utf8'));
+  const mapped = mapAccount(parsed.account ?? parsed);
+  ds.workspaces.push(mapped.workspace);
+  ds.agents.push(...mapped.agents);
+  ds.events.push(
+    ...mapped.events.map((event, i) => ({
+      id: `evt_ingested_${i}`,
+      workspaceId: event.workspaceId,
+      agentId: event.agentId ?? null,
+      milestone: event.milestone,
+      eventType: event.eventType,
+      status: event.status ?? ('success' as const),
+      metadata: event.metadata ?? {},
+      timestamp: event.timestamp ?? now.toISOString(),
+    })),
+  );
+  console.log(
+    `merged connected account: ${mapped.agents.length} agents, ${mapped.events.length} events`,
+  );
+}
 
 const agentsBy = new Map<string, typeof ds.agents>();
 for (const a of ds.agents) {
