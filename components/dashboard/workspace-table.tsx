@@ -387,10 +387,10 @@ function AgentBreakdown({ health }: { health: WorkspaceHealth }) {
               </div>
 
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[10.5px] text-zinc-600 sm:grid-cols-3">
-                <Field label="voice" value={agent.agent.voiceName} />
+                <Field label="voice" value={agent.agent.voiceName ?? '—'} />
                 <Field label="voice_id" value={agent.agent.voiceId.slice(0, 12)} />
-                <Field label="llm" value={agent.agent.llmModel} />
-                <Field label="preset" value={agent.agent.latencyPreset} />
+                <Field label="llm" value={agent.agent.llmModel ?? '—'} />
+                <Field label="preset" value={agent.agent.latencyPreset ?? '—'} />
                 <Field
                   label="latency_p50"
                   value={agent.agent.medianLatencyMs ? `${agent.agent.medianLatencyMs}ms` : '—'}

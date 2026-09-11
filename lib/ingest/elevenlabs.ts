@@ -79,13 +79,29 @@ export function deploymentSurfaceFor(source: ConversationSource | undefined) {
 /* -------------------------------------------------------------------------- */
 
 /**
+ * A conversation the platform stopped on purpose — a configured guardrail
+ * firing, or the agent ending the call itself. The call did not break, so it
+ * must not be escalated as a platform blocker.
+ */
+export function isDeliberateStop(reason: string | undefined): boolean {
+  if (!reason) return false;
+  const text = reason.toLowerCase();
+  return text.includes('guardrail') || text.includes('end_call');
+}
+
+/**
  * `status: 'failed'` is a transport failure. `call_successful: 'failure'` is the
  * goal evaluation — an agent can complete a call flawlessly and still be scored
  * a failure for not achieving its objective. Only the former is a blocker the
  * rule engine should escalate, so the two are never conflated.
+ *
+ * A guardrail stop reports as 'failed' too, but it is the customer's own safety
+ * rule doing its job. Counting it as breakage would flag working agents as
+ * error-blocked and send them a latency runbook they do not need.
  */
 export function isTechnicalFailure(conversation: ElevenLabsConversation): boolean {
-  return conversation.status === 'failed';
+  if (conversation.status !== 'failed') return false;
+  return !isDeliberateStop(conversation.termination_reason);
 }
 
 /** Best-effort translation of a termination reason into the error taxonomy. */
@@ -104,6 +120,15 @@ export function mapTerminationReason(reason: string | undefined): ErrorCode | un
   if (text.includes('synthesis') || text.includes('tts')) return 'TTS Synthesis Failure';
   if (text.includes('buffer')) return 'Audio Buffer Underrun';
   if (text.includes('voice id')) return 'Invalid Voice ID';
+  return undefined;
+}
+
+/** Human-readable reason for a stop that was intentional rather than a fault. */
+export function describeDeliberateStop(reason: string | undefined): string | undefined {
+  if (!reason) return undefined;
+  const text = reason.toLowerCase();
+  if (text.includes('guardrail')) return 'Stopped by a configured guardrail';
+  if (text.includes('end_call')) return 'Agent ended the call';
   return undefined;
 }
 
@@ -258,9 +283,11 @@ export function mapAccount(snapshot: ElevenLabsAccountSnapshot): MappedAccount {
       workspaceId,
       name: source.name,
       voiceId: source.voice_id,
-      voiceName: source.voice_id.slice(0, 8),
-      llmModel: 'gpt-4o',
-      latencyPreset: 'balanced',
+      // The agent list endpoint reports none of these. Leaving them null makes
+      // the UI show "—" rather than presenting a guess as configuration.
+      voiceName: null,
+      llmModel: null,
+      latencyPreset: null,
       deploymentSurface: surface,
       createdAt: iso(source.created_at_unix_secs),
       liveConversations: productionForAgent,

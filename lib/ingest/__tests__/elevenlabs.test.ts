@@ -1,7 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { mapAccount, isProductionSource, isTechnicalFailure, mapTerminationReason } from '../elevenlabs';
+import {
+  mapAccount,
+  isProductionSource,
+  isTechnicalFailure,
+  isDeliberateStop,
+  mapTerminationReason,
+} from '../elevenlabs';
 import type { ElevenLabsAccountSnapshot, ElevenLabsConversation } from '../elevenlabs-types';
 import { evaluateWorkspace } from '../../engine/health';
 import type { Agent, TelemetryEvent } from '../../types';
@@ -129,6 +135,38 @@ test('repeated technical failures surface as an error-blocked agent', () => {
   });
   assert.equal(health.status, 'ERROR_BLOCKED');
   assert.match(health.signals[0].diagnostic, /LLM Provider Timeout/);
+});
+
+test('a guardrail stop is not a platform failure', () => {
+  // The API reports a guardrail stop as status 'failed', but it is the
+  // customer's own safety rule doing its job — not breakage to escalate.
+  const guardrail = conversation({
+    agent_id: 'a',
+    status: 'failed',
+    termination_reason: "Conversation was stopped because the 'no_pricing' custom guardrail was triggered",
+  });
+  assert.equal(isDeliberateStop(guardrail.termination_reason), true);
+  assert.equal(isTechnicalFailure(guardrail), false);
+});
+
+test('repeated guardrail stops never mark an agent error-blocked', () => {
+  const { health } = derive({
+    workspaceId: 'ws_guard',
+    workspaceName: 'Guarded',
+    agents: [{ agent_id: 'agent_1', name: 'Guarded', voice_id: 'v1', created_at_unix_secs: NOW - 30 * DAY }],
+    conversations: [
+      conversation({ agent_id: 'agent_1', start_time_unix_secs: NOW - 25 * DAY }),
+      ...Array.from({ length: 5 }, (_, i) =>
+        conversation({
+          agent_id: 'agent_1',
+          status: 'failed',
+          termination_reason: "Conversation was stopped because the 'no_pricing' custom guardrail was triggered",
+          start_time_unix_secs: NOW - (20 - i) * DAY,
+        }),
+      ),
+    ],
+  });
+  assert.notEqual(health.status, 'ERROR_BLOCKED');
 });
 
 test('workspace milestone is the max across agents, not the average', () => {

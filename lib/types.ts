@@ -146,9 +146,10 @@ export interface Agent {
   name: string;
   /** ElevenLabs Voice ID assigned to the agent. */
   voiceId: string;
-  voiceName: string;
-  llmModel: LlmModel;
-  latencyPreset: LatencyPreset;
+  /** Null when the source system did not report it (e.g. an ingested account). */
+  voiceName: string | null;
+  llmModel: LlmModel | null;
+  latencyPreset: LatencyPreset | null;
   deploymentSurface: DeploymentSurface;
   /** ISO-8601 — when the agent record itself was created (M1 for the first agent). */
   createdAt: string;

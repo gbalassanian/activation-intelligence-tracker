@@ -106,9 +106,9 @@ function toAgent(row: AgentRow): Agent {
     workspaceId: row.workspace_id,
     name: row.name,
     voiceId: row.voice_id,
-    voiceName: row.voice_name,
-    llmModel: row.llm_model as LlmModel,
-    latencyPreset: row.latency_preset as LatencyPreset,
+    voiceName: row.voice_name || null,
+    llmModel: (row.llm_model || null) as LlmModel | null,
+    latencyPreset: (row.latency_preset || null) as LatencyPreset | null,
     deploymentSurface: row.deployment_surface as DeploymentSurface,
     createdAt: row.created_at,
     liveConversations: row.live_conversations,
@@ -182,7 +182,18 @@ export function insertAgents(agents: Agent[]): void {
        @creditConsumptionPct, @medianLatencyMs, @isDraft)
   `);
   db.transaction((rows: Agent[]) => {
-    for (const row of rows) stmt.run({ ...row, isDraft: row.isDraft ? 1 : 0 });
+    for (const row of rows) {
+      stmt.run({
+        ...row,
+        // The columns are NOT NULL, so unknown configuration is stored as an
+        // empty string and mapped back to null on read. Relaxing the constraint
+        // would mean rebuilding the table on every existing database.
+        voiceName: row.voiceName ?? '',
+        llmModel: row.llmModel ?? '',
+        latencyPreset: row.latencyPreset ?? '',
+        isDraft: row.isDraft ? 1 : 0,
+      });
+    }
   })(agents);
 }
 
